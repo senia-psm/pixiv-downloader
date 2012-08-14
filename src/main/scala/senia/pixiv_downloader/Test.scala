@@ -42,7 +42,7 @@ object Test extends App {
   @annotation.tailrec def parseParams(args: List[String], subresult: ValidationNEL[String, Config] = Config().success): ValidationNEL[String, Config] = args match {
     case Nil => subresult
     case ("--proxy" | "-p") :: p :: tail => parseParams(tail, (subresult |@| Proxy.parse(p))( (c, r) => c.copy(proxy = r.some) ))
-    case ("--proxy" | "-p") :: Nil => (subresult |@| "You should specifi proxy after -p or --proxy key".failNel[Config])( (c, r) => c )
+    case ("--proxy" | "-p") :: Nil => (subresult |@| "You should specify proxy after -p or --proxy key".failNel[Config])( (c, r) => c )
     case ("--help" | "-h") :: tail => parseParams(tail, subresult.map{ _.copy(helpRequest = true) } )
     case head :: tail => parseParams(tail, (subresult |@| ("Unsupported parameter: \"" + head + "\"").failNel[Config])( (c, p) => c))
   }
