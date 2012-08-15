@@ -67,6 +67,12 @@ object Test extends App {
     case Success(c) => c
   }
 
+  if (configMap.get('help).map{ _ => true }.getOrElse(false)) {
+    println("Usage:")
+    println(usage)
+    sys.exit(0)
+  }
+
   def getMandatory(keys: Map[Symbol, Option[String]], key: Symbol): ValidationNEL[String, String] =
     keys.get(key).flatMap( identity ).map{ _.successNel }.getOrElse( (key.toString().drop(1) + " is mandatory").failNel )
 
@@ -85,12 +91,6 @@ object Test extends App {
       println(usage)
       sys.exit(1)
     case Success(c) => c
-  }
-
-  if (config.helpRequest) {
-    println("Usage:")
-    println(usage)
-    sys.exit(0)
   }
 
   Client.withClient(config) { implicit client =>
