@@ -11,9 +11,10 @@ import org.apache.http.auth.{UsernamePasswordCredentials, AuthScope}
 import util.control.Exception._
 import senia.pixiv_downloader.Config
 import scala.collection.JavaConverters._
+import org.apache.http.client.HttpClient
 
 object Client {
-  def withClient[T](config: Config)(f: DefaultHttpClient => T): T = {
+  def withClient[T](config: Config)(f: HttpClient => T): T = {
     val client = new DefaultHttpClient()
 
     for {proxy <- config.proxy}
@@ -33,12 +34,12 @@ object Client {
     }
   }
 
-  def getLoginPage(implicit client: DefaultHttpClient) = {
+  def getLoginPage(implicit client: HttpClient) = {
     val response = client execute new HttpGet(Url.login)
     new BasicResponseHandler handleResponse response // body
   }
 
-  def getLoginRedirect(login: String, password: String)(implicit client: DefaultHttpClient): ValidationNEL[String, String] = {
+  def getLoginRedirect(login: String, password: String)(implicit client: HttpClient): ValidationNEL[String, String] = {
     val http_post = new HttpPost(Url.login)
     val params = List[NameValuePair](
       new BasicNameValuePair("pixiv_id", login),
