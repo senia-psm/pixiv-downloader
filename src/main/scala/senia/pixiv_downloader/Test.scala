@@ -4,7 +4,7 @@ import pixiv.{Url, Client}
 import scalaz._
 import Scalaz._
 
-case class ParameterKey(name: String, description: String, symbol: Symbol, withParameter: Boolean)
+case class ParameterKey(key: String, name: String, symbol: Symbol, withParameter: Boolean, description: Option[String] = None)
 case class MapMatcher[K, V](map: Map[K, V]) {
   def unapply(k: K): Option[V] = map.get(k)
 }
@@ -20,10 +20,7 @@ object Test extends App {
       case Nil => subresult
       case `withParameter`(k) :: l :: tail => parseParams(tail, keys, subresult.map { _ + (k.symbol -> l.some) })
       case `withParameter`(k) :: Nil =>
-        (subresult |@| ("You should specify " + k.description + " after " + k.name + " key").failNel[Map[Symbol, String]])((c, r) => c)
-
-//      case "--proxy" :: p :: tail => parseParams(tail, (subresult |@| Proxy.parse(p))((c, r) => c.copy(proxy = r.some)))
-//      case "--proxy" :: Nil => (subresult |@| "You should specify proxy after --proxy key".failNel[Config])((c, r) => c)
+        (subresult |@| ("You should specify " + k.name + " after " + k.key + " key").failNel[Map[Symbol, String]])((c, r) => c)
       case `withoutParameter`(k) :: tail => parseParams(tail, keys, subresult.map { _ + (k.symbol -> None) })
       case head :: tail => parseParams(tail, keys, (subresult |@| ("Unsupported parameter: \"" + head + "\"").failNel[Config])((c, p) => c))
     }
@@ -37,7 +34,7 @@ object Test extends App {
   )
 
   val optionalKeys = Set(
-    ParameterKey("--proxy", "proxy", 'proxy, withParameter = true),
+    ParameterKey("--proxy", "proxy", 'proxy, withParameter = true, "--proxy [protocol://][login:password@]proxy_name[:port]".some),
     ParameterKey("-h", "help", 'help, withParameter = false),
     ParameterKey("--help", "help", 'help, withParameter = false)
   )
@@ -45,10 +42,14 @@ object Test extends App {
   def mkDescription(keys: Set[ParameterKey]) =
     keys.
       groupBy(k => k.symbol).
-      map {
-        case (s, pks) =>
-          pks.map{_.name}.mkString("(", " | ", ")") +
-          (if (pks.head.withParameter) " " + pks.head.description.replace(' ', '_') else "")
+      map {case (s, pks) =>
+        pks.head.description.getOrElse(
+          (pks.map{_.key}.toList match {
+            case head :: Nil => head
+            case x => x.mkString("(", " | ", ")")
+          }) +
+          (if (pks.head.withParameter) " " + pks.head.name.replace(' ', '_') else "")
+        )
       }
 
   val usage =
@@ -57,13 +58,7 @@ object Test extends App {
       " " +
       mkDescription(optionalKeys).map{ "[" + _ + "]" }.mkString(" ")
 
-//  val usage = """
-//                |pixiv_downloader (-l | --login) login (-p | --password) password [(--help | -h)] [--proxy [protocol://][login:password@]proxy_name[:port]]
-//                | """.stripMargin
-
-
-
-  val configMap = parseParams(args.toList, (mandatoryKeys ++ optionalKeys).map{ k => k.name -> k}(collection.breakOut)) match {
+  val configMap = parseParams(args.toList, (mandatoryKeys ++ optionalKeys).map{ k => k.key -> k}(collection.breakOut)) match {
     case Failure(f) =>
       println(f.list.mkString("\n"))
       println("Usage:")
@@ -74,9 +69,6 @@ object Test extends App {
 
   def getMandatory(keys: Map[Symbol, Option[String]], key: Symbol): ValidationNEL[String, String] =
     keys.get(key).flatMap( identity ).map{ _.successNel }.getOrElse( (key.toString().drop(1) + " is mandatory").failNel )
-
-//  def getOptional(keys: Map[Symbol, Option[String]], key: Symbol): ValidationNEL[String, Option[String]] =
-//    keys.get(key).map{ _.successNel }.getOrElse( None.successNel )
 
   val configResult =
     for {
@@ -113,7 +105,3 @@ object Test extends App {
 
 
 }
-
-
-
-
