@@ -1,10 +1,16 @@
-name := "My Project"
+seq(ProguardPlugin.proguardSettings :_*)
+
+name := "pixiv-downloader"
 
 version := "1.0"
 
 scalaVersion := "2.9.1"
 
 scalacOptions += "-deprecation"
+
+mainClass := Some("senia.pixiv_downloader.Test")
+
+proguardOptions += keepMain("senia.pixiv_downloader.Test")
 
 libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.2.1"
 
