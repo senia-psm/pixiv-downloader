@@ -20,7 +20,8 @@ object Config{
   val optionalKeys = Set(
     ParameterKey("--proxy", "proxy", 'proxy, withParameter = true, "--proxy [protocol://][login:password@]proxy_name[:port]".some),
     ParameterKey("-h", "help", 'help, withParameter = false),
-    ParameterKey("--help", "help", 'help, withParameter = false)
+    ParameterKey("--help", "help", 'help, withParameter = false),
+    ParameterKey("-d", "download", 'download, withParameter = true)
   )
 
   private def mkDescription(keys: Set[ParameterKey]) =

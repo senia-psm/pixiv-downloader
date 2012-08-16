@@ -34,6 +34,7 @@ object Test extends App {
       case Success(x) => println("redirect to " + x)
       case Failure(l) => println("failed:\n" + l.list.mkString("\n"))
     }
+    println(Client.downloadFile("http://habrastorage.org/storage/habraeffect/f4/8e/f48e012bd2babdc5d90dd98fd7b880b6.png", "f48e012bd2babdc5d90dd98fd7b880b6.png"))
   }
 
 
