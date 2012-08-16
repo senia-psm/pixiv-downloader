@@ -9,7 +9,7 @@ object Test extends App {
     errors.foreach(l => Console.err.println(l.list.mkString("\n")))
     println("Usage:")
     println(Config.usage)
-    sys.exit(1)
+    sys.exit(if (errors.isDefined) 1 else 0)
   }
 
   val configMap = Config.parseArguments(args) match {
