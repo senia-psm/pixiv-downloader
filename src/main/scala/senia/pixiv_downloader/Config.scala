@@ -2,7 +2,7 @@ package senia.pixiv_downloader
 
 import scalaz.Scalaz._
 
-case class Config(login: String, password: String, proxy: Option[Proxy] = None)
+case class Config(login: String, password: String, proxy: Option[Proxy] = None, userAgent: Option[String] = Some("""Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/16.0 Firefox/16.0"""))
 
 case class ParameterKey(key: String, name: String, symbol: Symbol, withParameter: Boolean, description: Option[String] = None)
 case class MapMatcher[K, V](map: Map[K, V]) {

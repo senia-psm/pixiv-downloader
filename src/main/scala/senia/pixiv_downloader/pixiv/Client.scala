@@ -2,12 +2,13 @@ package senia.pixiv_downloader.pixiv
 
 import org.apache.http.impl.client.{BasicResponseHandler, DefaultHttpClient}
 import org.apache.http.client.methods.{HttpPost, HttpGet}
-import org.apache.http.{HttpStatus, Consts, NameValuePair}
+import org.apache.http.{HttpStatus, HttpHeaders, Consts, NameValuePair}
 import org.apache.http.message.BasicNameValuePair
 import org.apache.http.client.entity.UrlEncodedFormEntity
 import scalaz.Scalaz._
 import org.apache.http.conn.params.ConnRoutePNames
 import org.apache.http.auth.{UsernamePasswordCredentials, AuthScope}
+import org.apache.http.params.CoreProtocolPNames
 import util.control.Exception._
 import senia.pixiv_downloader.Config
 import scala.collection.JavaConverters._
@@ -28,6 +29,9 @@ object Client {
       new AuthScope(proxy.name, proxy.actualPort),
       new UsernamePasswordCredentials(login, password))
 
+    for {userAgent <- config.userAgent}
+      client.getParams().setParameter(CoreProtocolPNames.USER_AGENT, userAgent);
+    
     allCatch.andFinally {
       client.getConnectionManager.shutdown()
     } {
@@ -79,7 +83,7 @@ object Client {
   }*/
   case class Content(length: Long, fileName: String, contentType: Option[String], encoding: Option[String])
 
-  def downloadFile(sourceUrl: String, targetFile: String)(implicit client: HttpClient): ValidationNEL[String, Content] = {
+  def downloadFile(sourceUrl: String, targetFile: String, referer: Option[String] = None)(implicit client: HttpClient): ValidationNEL[String, Content] = {
     import java.io.FileOutputStream
     def withFileOutputStream[T](fileName: String)(f: BufferedOutputStream => T): T = {
       val fos = new BufferedOutputStream(new FileOutputStream(fileName))
@@ -87,6 +91,8 @@ object Client {
     }
 
     withGet(sourceUrl) { get =>
+      for{r <- referer}
+        get.addHeader(HttpHeaders.REFERER, r)
       val response = client execute get
       response.getStatusLine.getStatusCode match {
         case HttpStatus.SC_OK =>
