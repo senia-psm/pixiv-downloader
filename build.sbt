@@ -21,3 +21,5 @@ libraryDependencies += "com.typesafe.akka" % "akka-actor" % "2.0.2"
 resolvers += "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
+
+libraryDependencies += "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2.1"

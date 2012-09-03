@@ -49,12 +49,22 @@ object Client {
     allCatch.andFinally(post.releaseConnection()){f(post)}
   }
 
-  def getLoginPage(implicit client: HttpClient) =
-    withGet(Url.login){ get =>
-      val response = client execute get
-      new BasicResponseHandler handleResponse response // body
-    }
+  def getLoginPage(implicit client: HttpClient) = getPage(Url.login)
 
+  def getPage(url: String, referer: Option[String] = None)(implicit client: HttpClient) =
+    withGet(url){ get =>
+      for{r <- referer}
+        get.addHeader(HttpHeaders.REFERER, r)
+        
+      val parserFactory = new org.ccil.cowan.tagsoup.jaxp.SAXFactoryImpl
+      val parser = parserFactory.newSAXParser()
+      val adapter = new scala.xml.parsing.NoBindingFactoryAdapter
+      
+      val response = client execute get
+      val source = new org.xml.sax.InputSource(response.getEntity().getContent()) 
+      adapter.loadXML(source, parser)
+    }
+    
   def getLoginRedirect(login: String, password: String)(implicit client: HttpClient): ValidationNEL[String, String] =
     withPost(Url.login){ http_post =>
       val params = List[NameValuePair](
@@ -65,7 +75,7 @@ object Client {
       )
       http_post.setEntity(new UrlEncodedFormEntity(params.asJava, Consts.UTF_8))
 
-      val response = client.execute(http_post /*, context*/)
+      val response = client.execute(http_post)
 
       response.getStatusLine.getStatusCode match {
         case HttpStatus.SC_MOVED_TEMPORARILY =>
@@ -78,9 +88,16 @@ object Client {
       }
     }
 
-/*  def downloadImageById(id: String)(implicit client: HttpClient) = {
-    getImageBigPage
-  }*/
+  def downloadImageById(id: String)(implicit client: HttpClient): ValidationNEL[String, Content] = {
+    val page = getPage(Url.imgPageBig(id), Url.imgPageMedium(id).some)
+    val imgs = page \\ "img" \ "@src"
+    imgs.toList match {
+      case h :: Nil => downloadFile(h.text, id + h.text.split("\\.").lastOption.map{"." + _}.getOrElse(""), Url.imgPageBig(id).some)
+      case h :: t => "To many images".failNel
+      case _ => "Cannot find image".failNel
+    }
+  }
+  
   case class Content(length: Long, fileName: String, contentType: Option[String], encoding: Option[String])
 
   def downloadFile(sourceUrl: String, targetFile: String, referer: Option[String] = None)(implicit client: HttpClient): ValidationNEL[String, Content] = {
